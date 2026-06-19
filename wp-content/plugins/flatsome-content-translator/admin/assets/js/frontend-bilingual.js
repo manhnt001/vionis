@@ -6,7 +6,7 @@
         // Tải dữ liệu bản dịch Tiếng Việt thủ công
         var viData = {
             title: $transData.data('title'),
-            excerpt: $transData.data('excerpt'),
+            excerpt: $('#manual-vi-excerpt').html(),
             place: $transData.data('place'),
             content: $('#manual-vi-content').html(),
             schedule: []
@@ -88,14 +88,14 @@
             // 3. Hoán đổi Mô tả ngắn (Excerpt)
             var $excerpt = $('.product-short-description, .woocommerce-product-details__short-description, .short-description');
             if ($excerpt.length && viData.excerpt) {
-                origData.excerpt = $excerpt.html();
+                if (!origData.excerpt) origData.excerpt = $excerpt.html();
                 $excerpt.html(viData.excerpt).addClass('notranslate');
             }
 
             // 4. Hoán đổi Mô tả chi tiết (Content)
             var $content = $('#tab-description, .product-description, #accordion-description-content');
             if ($content.length && viData.content) {
-                origData.content = $content.html();
+                if (!origData.content) origData.content = $content.html();
                 $content.html(viData.content).addClass('notranslate');
             }
 

@@ -270,6 +270,12 @@
     gap: 15px;
 }
 
+#vi-schedule-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .editable-schedule-row {
     background: #fff;
     border: 1px solid #e2e8f0;

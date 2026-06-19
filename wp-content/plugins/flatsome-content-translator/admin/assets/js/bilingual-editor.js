@@ -22,7 +22,7 @@ jQuery(document).ready(function($) {
     var $colLeft = $('.original-col');
     var $colRight = $('.translation-col');
     
-    // Đồng bộ cuộn giữa các hàng lịch trình (Schedule) tương ứng
+    // Đồng bộ cuộn và highlight giữa các hàng lịch trình (Schedule) tương ứng
     $('.editable-schedule-row').hover(
         function() {
             var index = $(this).data('index');
@@ -56,6 +56,87 @@ jQuery(document).ready(function($) {
         }
     );
 
+    // Đồng bộ highlight giữa các Field Group chung (Tiêu đề, Mô tả, Khởi hành...)
+    function highlightFieldGroup($group) {
+        if ($group.find('.editable-schedule-repeater').length > 0) return;
+        var index = $group.index() - 1; // Trừ đi .col-header (index 0)
+        var $origGroup = $('.original-col .field-group').eq(index);
+        if ($origGroup.length) {
+            $origGroup.css({
+                'background-color': '#f0f9ff',
+                'transition': 'background-color 0.2s ease',
+                'box-shadow': 'inset 3px 0 0 #0284c7'
+            });
+            $group.css({
+                'background-color': '#f0fdf4',
+                'transition': 'background-color 0.2s ease',
+                'box-shadow': 'inset 3px 0 0 #16a34a'
+            });
+        }
+    }
+
+    function removeHighlightFieldGroup($group) {
+        if ($group.find('.editable-schedule-repeater').length > 0) return;
+        var index = $group.index() - 1;
+        var $origGroup = $('.original-col .field-group').eq(index);
+        if ($origGroup.length) {
+            $origGroup.css({
+                'background-color': '',
+                'transition': 'background-color 0.2s ease',
+                'box-shadow': ''
+            });
+            $group.css({
+                'background-color': '',
+                'transition': 'background-color 0.2s ease',
+                'box-shadow': ''
+            });
+        }
+    }
+
+    $('.translation-col .field-group').on('mouseenter', function() {
+        highlightFieldGroup($(this));
+    }).on('mouseleave', function() {
+        if ($(this).hasClass('is-focused') || $(this).find(':focus').length > 0) return;
+        removeHighlightFieldGroup($(this));
+    });
+
+    $('.translation-col .field-group input, .translation-col .field-group textarea').on('focus', function() {
+        var $group = $(this).closest('.field-group');
+        $group.addClass('is-focused');
+        highlightFieldGroup($group);
+    }).on('blur', function() {
+        var $group = $(this).closest('.field-group');
+        $group.removeClass('is-focused');
+        removeHighlightFieldGroup($group);
+    });
+
+    function setupTinyMceFocus() {
+        if (typeof tinymce !== 'undefined' && tinymce.editors) {
+            for (var i = 0; i < tinymce.editors.length; i++) {
+                var ed = tinymce.editors[i];
+                if (!ed._flFocusBound) {
+                    ed.on('focus', function(e) {
+                        var targetId = e.target.id;
+                        var $group = $('#' + targetId).closest('.field-group');
+                        $group.addClass('is-focused');
+                        highlightFieldGroup($group);
+                    });
+                    ed.on('blur', function(e) {
+                        var targetId = e.target.id;
+                        var $group = $('#' + targetId).closest('.field-group');
+                        $group.removeClass('is-focused');
+                        removeHighlightFieldGroup($group);
+                    });
+                    ed._flFocusBound = true;
+                }
+            }
+        }
+    }
+    
+    // Đăng ký sự kiện focus cho TinyMCE sau khi khởi tạo
+    setTimeout(setupTinyMceFocus, 1000);
+    setTimeout(setupTinyMceFocus, 3000);
+
     // 3. Xử lý Dịch tự động AI
     function flashField($field) {
         if (!$field || $field.length === 0) return;
@@ -74,6 +155,18 @@ jQuery(document).ready(function($) {
             }
         }
         $('#' + id).val(content);
+    }
+
+    function isEditorEmpty(id) {
+        if (typeof tinymce !== 'undefined' && tinymce.get(id)) {
+            var editor = tinymce.get(id);
+            if (editor && !editor.isHidden()) {
+                var content = editor.getContent().replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, '').trim();
+                return content === '';
+            }
+        }
+        var val = $('#' + id).val();
+        return !val || val.trim() === '';
     }
 
     $('#btn-workspace-auto-translate').on('click', function(e) {
@@ -113,40 +206,52 @@ jQuery(document).ready(function($) {
                     // 1. Tiêu đề
                     if (data.title) {
                         var $title = $('#vi-title');
-                        $title.val(data.title);
-                        flashField($title);
+                        if (!$title.val().trim()) {
+                            $title.val(data.title);
+                            flashField($title);
+                        }
                     }
 
                     // 2. Địa điểm
                     if (data.place) {
                         var $place = $('#vi-place');
-                        $place.val(data.place);
-                        flashField($place);
+                        if (!$place.val().trim()) {
+                            $place.val(data.place);
+                            flashField($place);
+                        }
                     }
 
                     // 3. Mô tả ngắn (Excerpt)
                     if (data.excerpt !== undefined) {
-                        setEditorContent('viexcerpt', data.excerpt);
-                        flashField($('#wp-viexcerpt-wrap'));
+                        if (isEditorEmpty('viexcerpt')) {
+                            setEditorContent('viexcerpt', data.excerpt);
+                            flashField($('#wp-viexcerpt-wrap'));
+                        }
                     }
 
                     // 4. Mô tả chi tiết (Content)
                     if (data.content !== undefined) {
-                        setEditorContent('vicontent', data.content);
-                        flashField($('#wp-vicontent-wrap'));
+                        if (isEditorEmpty('vicontent')) {
+                            setEditorContent('vicontent', data.content);
+                            flashField($('#wp-vicontent-wrap'));
+                        }
                     }
 
                     // 5. Lịch trình (Schedule)
                     if (data.schedule && data.schedule.length > 0) {
                         data.schedule.forEach(function(row, index) {
                             var $rowTitleInput = $('input[name="vi_schedule[' + index + '][title]"]');
-                            var $rowContentTextarea = $('textarea[name="vi_schedule[' + index + '][content]"]');
 
-                            $rowTitleInput.val(row.title);
-                            $rowContentTextarea.val(row.content);
-
-                            flashField($rowTitleInput);
-                            flashField($rowContentTextarea);
+                            if (!$rowTitleInput.val().trim()) {
+                                $rowTitleInput.val(row.title);
+                                flashField($rowTitleInput);
+                            }
+                            
+                            var editorId = 'vischedulecontent' + index;
+                            if (isEditorEmpty(editorId)) {
+                                setEditorContent(editorId, row.content);
+                                flashField($('#wp-' + editorId + '-wrap'));
+                            }
                         });
                     }
 

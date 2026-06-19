@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define Constants
-define('FL_TRANSLATOR_VERSION', '1.0.0');
+define('FL_TRANSLATOR_VERSION', '1.0.3');
 define('FL_TRANSLATOR_PATH', plugin_dir_path(__FILE__));
 define('FL_TRANSLATOR_URL', plugin_dir_url(__FILE__));
 
@@ -51,6 +51,44 @@ function fl_translator_frontend_assets() {
     }
 }
 
+// Thêm tuỳ chọn ẩn Mô tả sản phẩm vào Screen Options
+add_action('admin_footer', 'fl_translator_hide_editor_screen_option');
+function fl_translator_hide_editor_screen_option() {
+    global $post_type;
+    if (in_array($post_type, array('product', 'tour', 'service'))) {
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            var $container = $('.metabox-prefs-container');
+            if ($container.length && $('#postdivrich').length) {
+                var isHidden = localStorage.getItem('fl_hide_postdivrich') === 'true';
+                var checkedAttr = isHidden ? '' : 'checked="checked"';
+                var html = '<label for="postdivrich-hide">';
+                html += '<input name="postdivrich-hide" type="checkbox" id="postdivrich-hide" value="postdivrich" ' + checkedAttr + '>';
+                html += 'Mô tả sản phẩm (Main Content)</label>';
+                
+                $container.append(html);
+
+                if (isHidden) {
+                    $('#postdivrich').hide();
+                }
+
+                $('#postdivrich-hide').on('change', function() {
+                    if ($(this).is(':checked')) {
+                        $('#postdivrich').show();
+                        localStorage.setItem('fl_hide_postdivrich', 'false');
+                    } else {
+                        $('#postdivrich').hide();
+                        localStorage.setItem('fl_hide_postdivrich', 'true');
+                    }
+                });
+            }
+        });
+        </script>
+        <?php
+    }
+}
+
 // In container ẩn chứa các trường dịch Tiếng Việt ở chân trang chi tiết
 add_action('wp_footer', 'fl_translator_render_hidden_translations');
 function fl_translator_render_hidden_translations() {
@@ -74,13 +112,19 @@ function fl_translator_render_hidden_translations() {
     
     if (!is_array($vi_schedule)) {
         $vi_schedule = array();
+    } else {
+        foreach ($vi_schedule as &$item) {
+            if (isset($item['content'])) {
+                $item['content'] = wpautop(do_shortcode($item['content']));
+            }
+        }
     }
     ?>
     <div id="manual-vi-translations" style="display:none;" class="notranslate"
          data-title="<?php echo esc_attr($vi_title); ?>"
          data-place="<?php echo esc_attr($vi_place); ?>"
-         data-orig-place="<?php echo esc_attr($orig_place); ?>"
-         data-excerpt="<?php echo esc_attr(wp_strip_all_tags(wpautop(do_shortcode($vi_excerpt)))); ?>">
+         data-orig-place="<?php echo esc_attr($orig_place); ?>">
+         <div id="manual-vi-excerpt"><?php echo wpautop(do_shortcode($vi_excerpt)); ?></div>
          <div id="manual-vi-content"><?php echo wpautop(do_shortcode($vi_content)); ?></div>
          <div id="manual-vi-schedule"><?php echo esc_html(json_encode($vi_schedule)); ?></div>
     </div>

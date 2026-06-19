@@ -425,9 +425,10 @@ class FL_Translator_Admin {
             $raw_translated_title = isset($translations[$row_title]) ? $translations[$row_title] : $row_title;
             $raw_translated_content = !empty($row_content) ? FL_Translator_Core::rebuild_content_with_translations($row_content, $translations) : '';
 
-            // Lọc bỏ triệt để HTML tag cho các ô input/textarea thuần túy của Lịch trình
+            // Lọc bỏ triệt để HTML tag cho tiêu đề Lịch trình (tránh lỗi hiển thị)
             $clean_translated_title = html_entity_decode(strip_tags($raw_translated_title));
-            $clean_translated_content = html_entity_decode(strip_tags($raw_translated_content));
+            // Giữ nguyên định dạng HTML và style cho phần nội dung Lịch trình
+            $clean_translated_content = $raw_translated_content;
 
             $translated_schedule[] = array(
                 'title'   => trim($clean_translated_title),
@@ -875,7 +876,7 @@ class FL_Translator_Admin {
                    class="button button-secondary button-large" 
                    style="width: 100%; text-align: center; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px; font-weight: 600; font-family: 'Outfit', sans-serif; border-radius: 4px; padding: 4px 10px; height: auto; min-height: 38px; line-height: 1 !important; vertical-align: middle;">
                     <span class="dashicons dashicons-edit" style="margin: 0; display: inline-flex; align-items: center; justify-content: center; height: 20px; width: 20px; font-size: 18px;"></span>
-                    <span style="display: inline-block; line-height: 1;"><?php echo $has_translation ? 'Dịch thủ công (Sửa TV)' : 'Dịch thủ công (Tự viết)'; ?></span>
+                    <span style="display: inline-block; line-height: 1;"><?php echo $has_translation ? 'Dịch thủ công' : 'Dịch thủ công'; ?></span>
                 </a>
                 
                 <a href="<?php echo esc_url(admin_url('admin.php?page=fl-product-translator&post_id=' . $post->ID . '&mode=auto')); ?>" 
@@ -1140,7 +1141,7 @@ class FL_Translator_Admin {
                                     for ($i = 0; $i < $en_count; $i++) : 
                                         $index = $i + 1;
                                         $row_title = isset($vi_schedule[$i]['title']) ? html_entity_decode(strip_tags($vi_schedule[$i]['title'])) : '';
-                                        $row_content = isset($vi_schedule[$i]['content']) ? html_entity_decode(strip_tags($vi_schedule[$i]['content'])) : '';
+                                        $row_content = isset($vi_schedule[$i]['content']) ? $vi_schedule[$i]['content'] : '';
                                         ?>
                                         <div class="editable-schedule-row" data-index="<?php echo $i; ?>">
                                             <span class="row-badge">Ngày <?php echo $index; ?></span>
@@ -1150,7 +1151,15 @@ class FL_Translator_Admin {
                                             </div>
                                             <div class="inner-field">
                                                 <label>Nội dung chặng <?php echo $index; ?></label>
-                                                <textarea name="vi_schedule[<?php echo $i; ?>][content]" rows="3" class="input-text" placeholder="Nhập chi tiết lịch trình Tiếng Việt..."><?php echo esc_textarea($row_content); ?></textarea>
+                                                <?php 
+                                                wp_editor($row_content, 'vischedulecontent' . $i, array(
+                                                    'textarea_name' => 'vi_schedule[' . $i . '][content]',
+                                                    'textarea_rows' => 5,
+                                                    'media_buttons' => false,
+                                                    'tinymce' => true,
+                                                    'quicktags' => true
+                                                )); 
+                                                ?>
                                             </div>
                                         </div>
                                     <?php endfor; ?>
