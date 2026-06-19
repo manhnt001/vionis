@@ -1,0 +1,274 @@
+/* Giao diện Biên tập Song ngữ - Flatsome Content Translator */
+
+.bilingual-toggle-wrapper {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #101d3b 0%, #1a2a4f 100%);
+    color: #fff;
+}
+
+.bilingual-toggle-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bilingual-toggle-brand .dashicons {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: #4da6ff;
+}
+
+.bilingual-toggle-brand h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+}
+
+.bilingual-toggle-brand p {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: #b0c4de;
+}
+
+.bilingual-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bilingual-switch-label {
+    font-weight: 500;
+    font-size: 13px;
+    color: #fff;
+}
+
+/* Switch UI */
+.fl-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+}
+
+.fl-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.fl-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4a5568;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.fl-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .fl-slider {
+    background-color: #007cba;
+}
+
+input:checked + .fl-slider:before {
+    transform: translateX(24px);
+}
+
+/* Bố cục Song ngữ song song */
+@media (min-width: 961px) {
+    body.bilingual-mode-active #poststuff {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    body.bilingual-mode-active #post-body {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 30px !important;
+        margin-right: 0 !important;
+    }
+
+    body.bilingual-mode-active #post-body-content {
+        flex: 1 1 50% !important;
+        width: 50% !important;
+        min-width: 0 !important;
+        margin-right: 0 !important;
+        float: none !important;
+    }
+
+    /* Di chuyển metabox song ngữ sang cột phải */
+    body.bilingual-mode-active #postbox-container-1 {
+        flex: 1 1 50% !important;
+        width: 50% !important;
+        float: none !important;
+    }
+
+    /* Ẩn các metabox chuẩn của WP ở cột phải khi song ngữ đang mở để tập trung dịch thuật */
+    body.bilingual-mode-active #postbox-container-1 > div:not(#fl-bilingual-translation-metabox) {
+        display: none !important;
+    }
+
+    /* Tạo khối so sánh trực diện */
+    body.bilingual-mode-active .bilingual-row-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 25px;
+        align-items: start;
+    }
+}
+
+/* Thiết kế Metabox Biên dịch Tiếng Việt */
+#fl-bilingual-translation-metabox {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+#fl-bilingual-translation-metabox .hndle {
+    border-bottom: 1px solid #eee;
+    padding: 12px 15px;
+    background: #fcfcfc;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#fl-bilingual-translation-metabox .inside {
+    padding: 20px !important;
+    margin: 0 !important;
+}
+
+/* Các trường bên cột dịch Tiếng Việt */
+.bilingual-field-group {
+    margin-bottom: 22px;
+}
+
+.bilingual-field-group:last-child {
+    margin-bottom: 0;
+}
+
+.bilingual-field-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #23282d;
+    font-size: 13px;
+}
+
+.bilingual-input-text {
+    width: 100%;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    border: 1px solid #8c8f94 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bilingual-input-text:focus {
+    border-color: #2271b1 !important;
+    box-shadow: 0 0 0 1px #2271b1 !important;
+    outline: 2px solid transparent !important;
+}
+
+/* Hộp thông tin hỗ trợ */
+.bilingual-info-box {
+    background: #f0f6fc;
+    border-left: 4px solid #72aee6;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+}
+
+.bilingual-info-box p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1d2327;
+}
+
+.bilingual-info-box p:last-child {
+    margin-bottom: 0;
+}
+
+/* Đồng bộ cuộn (Sync Scroll) hoặc căn chỉnh các khối tiêu đề */
+.bilingual-column-header {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 10px 15px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    color: #334155;
+    border-left: 4px solid #475569;
+}
+
+.bilingual-column-header.vi {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left-color: #10b981;
+}
+
+/* Định dạng trình lặp Itinerary / Schedule */
+.bilingual-schedule-repeater {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    padding: 15px;
+}
+
+.bilingual-schedule-row {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.bilingual-schedule-row:last-child {
+    margin-bottom: 0;
+}
+
+.bilingual-schedule-row-index {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 3px;
+}

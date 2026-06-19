@@ -1,0 +1,66 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Popup for CF7 with Sweet Alert\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-02-14 13:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.3; wp-6.1.1\n"
+"X-Domain: cf7simplepopup"
+
+#: cf7simplepopup.php:79
+msgid "CF7 Swal Settings"
+msgstr ""
+
+#: cf7simplepopup.php:78 cf7simplepopup.php:98
+msgid "CF7 Sweet Alert Settings"
+msgstr ""
+
+#. URI of the plugin
+msgid "https://metinsarac.net/"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://www.linkedin.com/in/metin-sara%C3%A7-b51a2073/"
+msgstr ""
+
+#. Author of the plugin
+msgid "Metin Saraç"
+msgstr ""
+
+#: cf7simplepopup.php:112
+msgid "Please Enter <b>Pixel</b> Value."
+msgstr ""
+
+#: cf7simplepopup.php:120
+msgid "Please enter the value in miliseconds. <b>1 Second = 1000ms</b>"
+msgstr ""
+
+#. Name of the plugin
+#. Description of the plugin
+msgid "Popup for CF7 with Sweet Alert"
+msgstr ""
+
+#: cf7simplepopup.php:117
+msgid "Popup Window Auto Close Time"
+msgstr ""
+
+#: cf7simplepopup.php:109
+msgid "Popup Window Width"
+msgstr ""
+
+#: cf7simplepopup.php:126
+msgid "Save Settings"
+msgstr ""
+
+#: cf7simplepopup.php:100
+msgid "You can leave the boxes blank for the default values."
+msgstr ""

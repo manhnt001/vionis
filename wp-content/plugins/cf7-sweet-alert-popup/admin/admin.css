@@ -1,0 +1,16 @@
+.premiumButton {
+	color: #ff007a !important;
+	font-weight: 700;
+}
+
+.goPremiumText {
+	color: #004085;
+	background-color: #cce5ff;
+	border-color: #b8daff;
+	padding: 15px;
+	font-weight: 700;
+}
+
+.goPremiumText a {
+	color: #000;
+}
