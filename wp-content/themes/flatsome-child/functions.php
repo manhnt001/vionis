@@ -1381,3 +1381,14 @@ add_action('wp_footer', function(){
 		<!-- /Brevo Conversations {/literal} -->
 	<?php
 });
+
+/*load icon từ CDN*/
+function vionis_enqueue_fontawesome() {
+    wp_enqueue_style(
+        'font-awesome',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
+        array(),
+        '6.7.2'
+    );
+}
+add_action('wp_enqueue_scripts', 'vionis_enqueue_fontawesome');
