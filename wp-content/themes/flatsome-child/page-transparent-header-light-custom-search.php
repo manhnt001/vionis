@@ -24,7 +24,7 @@ get_header(); ?>
                     /* translators: %s: search query. */
                     printf(esc_html__('Tìm kiếm cho từ khóa:'.$search_key.'', 'hazo'), '<span>' . get_search_query() . '</span>');
                     } else {
-                        _e('Kết quả tìm kiếm tour','hazo');
+                        _e('Tour search results','hazo');
                     } ?>
 
 

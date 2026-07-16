@@ -1990,4 +1990,55 @@ body.wp-admin.rtl .ui-datepicker {
     margin-right: -1px;
 }
 
+/* Responsive container & footer spacing for all laptop and standard desktop screens */
+@media only screen and (min-width: 1025px) and (max-width: 1888px) {
+
+    .container,
+    .container-width,
+    .shop-container,
+    #main .section-content,
+    .content-area>.row,
+    #content>.row,
+    .vionis-footer .footer-grid,
+    .category-page-row {
+        max-width: 90% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+
+/* Constrain width on large desktop and ultra-wide screens (above 1888px) */
+@media only screen and (min-width: 1889px) {
+
+    .container,
+    .container-width,
+    .shop-container,
+    #main .section-content,
+    .content-area>.row,
+    #content>.row,
+    .vionis-footer .footer-grid,
+    .category-page-row {
+        max-width: 1700px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+
+/* Responsive for price and tour button on mobile */
+@media only screen and (max-width: 549px) {
+    .tour-price {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .tour-price .price-wrapper {
+        justify-content: center !important;
+    }
+
+    .tour-button.text-right {
+        text-align: center !important;
+    }
+}
+
 /*# sourceMappingURL=datepicker.css.map */

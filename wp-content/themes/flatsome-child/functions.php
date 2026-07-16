@@ -1,8 +1,8 @@
 <?php 
-// Display "Liên hệ" if price is empty
+// Display "Contact Us" if price is empty
 add_filter( 'woocommerce_empty_price_html', 'custom_call_for_price' );
 function custom_call_for_price() {
-    return '<span class="contact-for-price">Liên hệ</span>';
+    return '<span class="contact-for-price">' . esc_html__( 'Contact Us', 'hazo' ) . '</span>';
 }
 
 add_action( 'wp_head', 'contact_for_price_styles' );
@@ -521,10 +521,12 @@ if (!empty($tour_times) && !is_wp_error($tour_times)) {
   <div class="is-divider" style="height: 1px;background-color: #D9D9D9;min-width: 100%;"></div>
   <div class="row align-middle row-xsmall">
     <div class="col large-6 medium-6 small-6 tour-price">
-      <div class="price-wrapper">
-        <?php global $product;
-         echo '<span class="price">'. $product->get_price_html() .'</span>'; ?>
+      <?php global $product;
+      if ( $product && $product->get_price() !== '' ) : ?>
+      <div class="price-wrapper" style="display: flex; align-items: baseline; gap: 4px; white-space: nowrap; flex-wrap: nowrap;">
+        <?php echo '<span class="price-label" style="display: inline-block;">From: </span><span class="price" style="display: inline-block; margin: 0;">'. $product->get_price_html() .'</span><span class="price-unit" style="display: inline-block;"> / person</span>'; ?>
       </div>
+      <?php endif; ?>
     </div>
 
     <div class="col large-6 medium-6 small-6 text-right tour-button">
@@ -544,9 +546,11 @@ function custom_single_price() {
     <div class="place">
       <strong><?php _e('Location','cm') ?>:</strong> <?php the_field( 'place' ); ?>
     </div>
+    <?php if ( $product && $product->get_price() !== '' ) : ?>
     <div class="price">
       <?php _e('Price From','cm') ?>: <?php echo $product->get_price_html(); ?>
     </div>
+    <?php endif; ?>
   </div>
 
   <?php
@@ -567,7 +571,9 @@ function booktour() {
       <div class="title primary-color">
         <?php the_title(); ?>
       </div>
+      <?php if ( $product && $product->get_price() !== '' ) : ?>
       <p class="price">Starting From:&nbsp; <?php echo $product->get_price_html(); ?></p>
+      <?php endif; ?>
       <p>Location:&nbsp; <?php the_field( 'place' ); ?></p>
       <a style="margin-top: 20px;" href="#regtour" target="_self" class="button primary custom-btn" style="border-radius:99px;">
       <span>View Tour</span>
@@ -817,7 +823,7 @@ function search_form() {
   ob_start()
   ?>
 
-  <form action="<?php echo get_site_url() ?>/tim-kiem-tour" id="form-tour">
+  <form action="<?php echo get_site_url() ?>/search-tour" id="form-tour">
     <?php
       if (is_search()) {
           $search = get_search_query();
@@ -1142,7 +1148,7 @@ function search_form_side() {
   ob_start()
   ?>
 
-  <form action="<?php echo get_site_url() ?>/tim-kiem-tour" id="form-tour">
+  <form action="<?php echo get_site_url() ?>/search-tour" id="form-tour">
     <?php
       if (is_search()) {
           $search = get_search_query();

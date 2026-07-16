@@ -23,7 +23,7 @@ function tour_search_filter_shortcode() {
         'hide_empty' => true,
     ));
     ?>
-    <form action="<?php echo esc_url(home_url('/')); ?>tim-kiem-tour" method="GET" id="tsf-form">
+    <form action="<?php echo esc_url(home_url('/')); ?>search-tour" method="GET" id="tsf-form">
         <!-- Hidden inputs for actual search parameters -->
         <input type="hidden" name="noi-den" id="tsf-noiden" value="<?php echo esc_attr($_GET['noi-den'] ?? ''); ?>">
         <input type="hidden" name="ngay-khoi-hanh" id="tsf-ngaykhoihanh" value="<?php echo esc_attr($_GET['ngay-khoi-hanh'] ?? ''); ?>">
