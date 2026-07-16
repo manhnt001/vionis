@@ -1,4 +1,6 @@
 <?php
+define( 'WP_CACHE', true ); // Added by WP Rocket
+
 /**
  * The base configuration for WordPress
  *
@@ -48,15 +50,23 @@ define( 'DB_COLLATE', '' );
  *
  * @since 2.6.0
  */
-define( 'AUTH_KEY',         '@gp4G~ACONeo!74EXO9G;}.!SZ-Py Vt2u=oIfhjmwR|nRQO^&R<S)<EGr[F/*=~' );
-define( 'SECURE_AUTH_KEY',  'P6{usU^V? ^++V>+r$}V-j9e9^CJ5Yz5ubVp`xnO=xyc4H@A}|RElp%d;MaP=M|O' );
-define( 'LOGGED_IN_KEY',    'Ei6O8TdA0x/Yec}]D!pu~hZ:+C-]<_yq+*_uzJ&r6HE7q03Ya]{8 Wv!dls&|pP,' );
-define( 'NONCE_KEY',        'ihLw{M_;?*R&d[iOO#%z&(^[P%*iGY&5gc@j&Md!9{WR5e+2u90eSlm4NG(s1f}$' );
-define( 'AUTH_SALT',        ')7g>rS?)1.fu`U?[eOIe+tY*2bo5p3Na_8~q(E?Z$|S9@4oG-q^i8A&}bl[6R9?A' );
-define( 'SECURE_AUTH_SALT', '`>dMuQENY-&;(7%U=oJB>Kd>TWIlFrDPfm~e:-YXFns{6+,y]s=t/wKx&Jc1}X?l' );
-define( 'LOGGED_IN_SALT',   'Q>$TjNo2JK[g+05]RL2KHt.]6^ENv,fuLzGH*^);p)5}4I/,dr{ESUWG6B}hQVD;' );
-define( 'NONCE_SALT',       'L%sy<~V8cSz/Z~}nK5Bk_PvhVEi7T![J|a7lWE_LHJ!GC:s#:P2{O7].v|)FD|W#' );
+define( 'AUTH_KEY',         'P)VjoVXh[&Hmm{b<!]35<.op ({2w7Q/9U5w0>D|>H1A,0>9wXP$Eq?B*`3::I&k' );
+define( 'SECURE_AUTH_KEY',  'RP@A [VUW }|zFfOZ=2GG;$ 8<g9 4il+gUUKNEF_w?%>$pa!c8K>@$%oSfs^RGr' );
+define( 'LOGGED_IN_KEY',    'woFG)adSL>57Jq8~RN!kuMV?x8iCDzee(] >_hNL.:Xkk{Z0SA(;%L %vm!EjKN7' );
+define( 'NONCE_KEY',        'X0xphnVAMv*Ms&{RF$+Azh@pu5QC~kjqkY!T3)q`a=V v1=L,g>t|T@Ukd25T[U|' );
+define( 'AUTH_SALT',        'qtY]S<C<RN[&tY!]e@UrUcMIYvBhLtH+,B22<]1b;D0QjV(QsKjwVeH;iXtcp Hw' );
+define( 'SECURE_AUTH_SALT', ';N91Xi=Lw2)`g9~K!KmI8w!+$4$9fgOjDRJNprsGy:K()C*Zn[NynqN |I@S*B#B' );
+define( 'LOGGED_IN_SALT',   'AMEjf/%(#7](Cr5lChZP^^ZO!z)).@sbJHU09sq>gvh(m*hi9}9en7F[C4%C8${z' );
+define( 'NONCE_SALT',       'n@SqdOg64f$v[t!L#Xl-CIKrRA4S<SX1w1+eopa4x6/[u#8rf@]p#as%2+ky3mL/' );
+define('CONCATENATE_SCRIPTS', false);
 
+/*
+define( 'WP_HOME', 'https://vionistravel.com' );
+define( 'WP_SITEURL', 'https://vionistravel.com' );
+define( 'WP_MEMORY_LIMIT', '512M' );
+if ($_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')
+  $_SERVER['HTTPS'] = 'ON';
+*/
 /**#@-*/
 
 /**
@@ -64,20 +74,7 @@ define( 'NONCE_SALT',       'L%sy<~V8cSz/Z~}nK5Bk_PvhVEi7T![J|a7lWE_LHJ!GC:s#:P2
  *
  * You can have multiple installations in one database if you give each
  * a unique prefix. Only numbers, letters, and underscores please!
- *
- * At the installation time, database tables are created with the specified prefix.
- * Changing this value after WordPress is installed will make your site think
- * it has not been installed.
- *
- * @link https://developer.wordpress.org/advanced-administration/wordpress/wp-config/#table-prefix
  */
- /*
-define( 'WP_HOME', 'https://vionistravel.maiatech.com.vn' );
-define( 'WP_SITEURL', 'https://vionistravel.maiatech.com.vn' );
-define( 'WP_MEMORY_LIMIT', '512M' );
-if ($_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')
-  $_SERVER['HTTPS'] = 'ON';
-*/
 $table_prefix = 'wp_';
 
 /**
@@ -92,12 +89,21 @@ $table_prefix = 'wp_';
  *
  * @link https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
  */
-define( 'WP_DEBUG', false );
+define('WP_DEBUG', true);
 
 /* Add any custom values between this line and the "stop editing" line. */
 
+define( 'RT_WP_NGINX_HELPER_CACHE_PATH', '/dev/shm/nginx-cache/wp' );
 
 
+
+ini_set('display_errors', 'off');
+define('WP_DEBUG_DISPLAY', false);
+ini_set('log_errors', 'off');
+define('WP_DEBUG_LOG', false);
+define('SAVEQUERIES', true);
+define('SCRIPT_DEBUG', false);
+define('WP_AUTO_UPDATE_CORE', true);
 /* That's all, stop editing! Happy publishing. */
 
 /** Absolute path to the WordPress directory. */
@@ -107,3 +113,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
+
+

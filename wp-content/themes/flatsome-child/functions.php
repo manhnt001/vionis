@@ -1,4 +1,34 @@
 <?php 
+// Display "Liên hệ" if price is empty
+add_filter( 'woocommerce_empty_price_html', 'custom_call_for_price' );
+function custom_call_for_price() {
+    return '<span class="contact-for-price">Liên hệ</span>';
+}
+
+add_action( 'wp_head', 'contact_for_price_styles' );
+function contact_for_price_styles() {
+    ?>
+    <style>
+        /* CSS cho chữ "Liên hệ" ở danh sách sản phẩm */
+        .tour-price .contact-for-price,
+        .related-item .contact-for-price,
+        .product-small .contact-for-price {
+            color: #0071bb !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+        }
+        
+        /* CSS cho chữ "Liên hệ" ở chi tiết sản phẩm */
+        .box-price .contact-for-price,
+        .product-info .contact-for-price {
+            font-size: 24px !important;
+            color: #FF3D00 !important;
+            font-weight: 800 !important;
+        }
+    </style>
+    <?php
+}
+
 add_action('admin_head', 'bc_disable_notice'); function bc_disable_notice() { ?> <style> .notice-warning, .notice-error { display: none;} </style> <?php }
 
 // Classic edior
@@ -498,7 +528,7 @@ if (!empty($tour_times) && !is_wp_error($tour_times)) {
     </div>
 
     <div class="col large-6 medium-6 small-6 text-right tour-button">
-      <a class="btn-tour" href="<?php the_permalink(); ?>">Book Tour Now</a>
+      <a class="btn-tour" href="<?php the_permalink(); ?>">View Tour</a>
     </div>
   </div>
   
@@ -540,7 +570,7 @@ function booktour() {
       <p class="price">Starting From:&nbsp; <?php echo $product->get_price_html(); ?></p>
       <p>Location:&nbsp; <?php the_field( 'place' ); ?></p>
       <a style="margin-top: 20px;" href="#regtour" target="_self" class="button primary custom-btn" style="border-radius:99px;">
-      <span>Book Tour Now</span>
+      <span>View Tour</span>
     </a>
     </div>
 
@@ -969,6 +999,9 @@ function hazo_save_menu_vi_translation_field($menu_id, $menu_item_db_id, $args) 
     }
 }
 
+global $hazo_menu_dict;
+$hazo_menu_dict = array();
+
 // 3. Tự động render HTML ghép 2 ngôn ngữ ra ngoài Front-end
 add_filter('nav_menu_item_title', 'hazo_display_bilingual_menu_title', 10, 2);
 function hazo_display_bilingual_menu_title($title, $item) {
@@ -978,10 +1011,103 @@ function hazo_display_bilingual_menu_title($title, $item) {
     $vi_translation = get_post_meta($item->ID, '_menu_item_vi_translation', true);
     
     if (!empty($vi_translation)) {
-        return '<span class="notranslate"><span class="menu-lang-en">' . $title . '</span><span class="menu-lang-vi">' . esc_html($vi_translation) . '</span></span>';
+        global $hazo_menu_dict;
+        // Gộp chuỗi để JS có thể tìm ra đoạn text bị Flatsome gộp (trường hợp Flatsome dùng .text())
+        $mushed = wp_strip_all_tags($title) . wp_strip_all_tags($vi_translation);
+        
+        $html = '<span class="notranslate menu-bilingual"><span class="menu-lang-en">' . $title . '</span><span class="menu-lang-vi">' . esc_html($vi_translation) . '</span></span>';
+        
+        // Lưu vào từ điển
+        $hazo_menu_dict[$mushed] = $html;
+        
+        return $html;
     }
     
     return $title;
+}
+
+// Khôi phục HTML bị Flatsome JS xóa thẻ (Sử dụng TreeWalker và Regex không phân biệt hoa thường)
+add_action('wp_footer', 'hazo_fix_mushed_menu_js', 999);
+function hazo_fix_mushed_menu_js() {
+    global $hazo_menu_dict;
+    if (empty($hazo_menu_dict)) return;
+    ?>
+    <script>
+    jQuery(document).ready(function($) {
+        var dict = <?php echo json_encode($hazo_menu_dict); ?>;
+        
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function fixMushedMenus() {
+            var walker = document.createTreeWalker(
+                document.body,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: function(node) {
+                        if (node.parentNode.nodeName === 'SCRIPT' || node.parentNode.nodeName === 'STYLE') {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        var text = node.nodeValue;
+                        var match = false;
+                        for (var mushed in dict) {
+                            var regex = new RegExp(escapeRegExp(mushed), 'i');
+                            if (regex.test(text)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        return match ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+                    }
+                },
+                false
+            );
+
+            var nodesToReplace = [];
+            var node;
+            while (node = walker.nextNode()) {
+                nodesToReplace.push(node);
+            }
+
+            nodesToReplace.forEach(function(node) {
+                var parent = node.parentNode;
+                var text = node.nodeValue;
+                var replaced = false;
+                
+                for (var mushed in dict) {
+                    var regex = new RegExp(escapeRegExp(mushed), 'i');
+                    if (regex.test(text)) {
+                        text = text.replace(regex, dict[mushed]);
+                        replaced = true;
+                    }
+                }
+                
+                if (replaced) {
+                    var span = document.createElement('span');
+                    span.innerHTML = text;
+                    parent.insertBefore(span, node);
+                    parent.removeChild(node);
+                }
+            });
+        }
+        
+        fixMushedMenus();
+        
+        var observer = new MutationObserver(function(mutations) {
+            var shouldFix = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length > 0) shouldFix = true;
+            });
+            if (shouldFix) fixMushedMenus();
+        });
+        
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+    });
+    </script>
+    <?php
 }
 
 // 4. Chèn CSS thẳng vào Header để tránh lỗi lưu Cache của trình duyệt
@@ -989,13 +1115,22 @@ add_action('wp_head', 'hazo_bilingual_menu_css');
 function hazo_bilingual_menu_css() {
     ?>
     <style>
-        /* Mặc định ẩn Tiếng Việt, hiện Tiếng Anh */
-        .menu-lang-vi { display: none !important; }
-        .menu-lang-en { display: inline-block !important; }
+        /* Ẩn mặc định cả 2 ngôn ngữ để dùng logic hiển thị bên dưới */
+        .notranslate .menu-lang-vi,
+        .notranslate .menu-lang-en { 
+            display: none !important; 
+        }
 
-        /* Khi GTranslate chuyển sang Tiếng Việt (bắt lang="vi" hoặc lang="vi-VN") */
-        html[lang|="vi"] .menu-lang-vi { display: inline-block !important; }
-        html[lang|="vi"] .menu-lang-en { display: none !important; }
+        /* Hiện tiếng Việt khi html có lang chứa "vi" */
+        html[lang*="vi"] .notranslate .menu-lang-vi { 
+            display: inline-block !important; 
+        }
+
+        /* Hiện tiếng Anh khi html có lang chứa "en", hoặc khi KHÔNG có lang "vi" */
+        html[lang*="en"] .notranslate .menu-lang-en,
+        html:not([lang*="vi"]) .notranslate .menu-lang-en { 
+            display: inline-block !important; 
+        }
     </style>
     <?php
 }
@@ -1392,3 +1527,290 @@ function vionis_enqueue_fontawesome() {
     );
 }
 add_action('wp_enqueue_scripts', 'vionis_enqueue_fontawesome');
+
+// Thêm tuỳ chọn Loại trừ danh mục vào block Products (ux_products) của Flatsome UX Builder
+add_filter( 'ux_builder_shortcode_data_ux_products', 'vionis_add_exclude_cat_to_ux_products' );
+function vionis_add_exclude_cat_to_ux_products( $data ) {
+    $data['options']['filter_posts']['options']['cat_exclude'] = array(
+        'type'       => 'select',
+        'heading'    => __( 'Danh mục ẩn', 'flatsome' ),
+        'config'     => array(
+            'multiple'    => true,
+            'placeholder' => __( 'Chọn danh mục để ẩn...', 'flatsome' ),
+            'termSelect'  => array(
+                'post_type'  => 'product',
+                'taxonomies' => 'product_cat',
+            ),
+        ),
+    );
+    return $data;
+}
+
+// Bắt lấy tuỳ chọn cat_exclude trong shortcode ux_products
+add_filter( 'pre_do_shortcode_tag', 'vionis_ux_products_cat_exclude_atts', 10, 4 );
+function vionis_ux_products_cat_exclude_atts( $return, $tag, $attr, $m ) {
+    if ( $tag === 'ux_products' || $tag === 'ux_bestseller_products' || $tag === 'ux_featured_products' || $tag === 'ux_sale_products' || $tag === 'ux_latest_products' || $tag === 'ux_custom_products' ) {
+        if ( is_array( $attr ) && isset( $attr['cat_exclude'] ) ) {
+            $GLOBALS['vionis_ux_products_cat_exclude'] = $attr['cat_exclude'];
+        } else {
+            $GLOBALS['vionis_ux_products_cat_exclude'] = '';
+        }
+    }
+    return $return;
+}
+
+// Áp dụng bộ lọc cho query của Flatsome
+add_action( 'pre_get_posts', 'vionis_apply_cat_exclude_to_ux_products', 999 );
+function vionis_apply_cat_exclude_to_ux_products( $q ) {
+    if ( is_admin() && ! wp_doing_ajax() ) return; 
+
+    if ( ! empty( $GLOBALS['vionis_ux_products_cat_exclude'] ) ) {
+        $post_type = $q->get('post_type');
+        if ( $post_type === 'product' || (is_array($post_type) && in_array('product', $post_type)) ) {
+            $hidden_categories = explode( ',', $GLOBALS['vionis_ux_products_cat_exclude'] );
+            
+            $tax_query = (array) $q->get( 'tax_query' );
+            $tax_query[] = array(
+                   'taxonomy' => 'product_cat',
+                   'field'    => 'term_id',
+                   'terms'    => $hidden_categories, 
+                   'operator' => 'NOT IN'
+            );
+            $q->set( 'tax_query', $tax_query );
+        }
+    }
+}
+
+// Vionis Tour Categories Shortcode
+add_shortcode( 'vionis_tour_categories', 'vionis_tour_categories_shortcode' );
+function vionis_tour_categories_shortcode( $atts ) {
+    $atts = shortcode_atts( array(
+        'ids'     => '',
+        'type'    => 'slider', // 'slider' hoặc 'row'
+    ), $atts );
+
+    $args = array(
+        'taxonomy'   => 'product_cat',
+        'hide_empty' => false,
+    );
+
+    if ( ! empty( $atts['ids'] ) ) {
+        $args['include'] = array_map( 'intval', explode( ',', $atts['ids'] ) );
+        $args['orderby'] = 'include';
+    } else {
+        $args['parent'] = 0;
+    }
+
+    $categories = get_terms( $args );
+
+    if ( empty( $categories ) || is_wp_error( $categories ) ) {
+        return '';
+    }
+
+    $is_slider = $atts['type'] === 'slider';
+    $item_count = count( $categories );
+    $wrapper_classes = $is_slider 
+        ? 'vionis-tour-wrapper row row-small slider slider-nav-circle slider-nav-push slider-style-normal vionis-items-' . $item_count 
+        : 'vionis-tour-wrapper row row-small vionis-items-' . $item_count;
+    
+    // Flickity options: cuộn 1 ô mỗi lần, không lặp, không chấm tròn
+    $flickity_attr = $is_slider 
+        ? ' data-flickity-options=\'{"cellAlign": "left", "wrapAround": false, "pageDots": false, "autoPlay": false, "prevNextButtons": true, "groupCells": 1, "contain": true}\'' 
+        : '';
+
+    ob_start();
+    ?>
+    <style>
+        /*==============================
+            VIONIS TOUR CARD
+        ==============================*/
+        .vionis-tour-wrapper * {
+            box-sizing: border-box;
+        }
+        .vionis-tour-card {
+            position: relative;
+            display: block;
+            overflow: hidden;
+            border-radius: 24px;
+            height: 420px;
+            text-decoration: none;
+            background: #ddd;
+        }
+        .vionis-tour-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .8s ease;
+        }
+        .vionis-tour-card .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,.08), rgba(0,0,0,.22), rgba(0,0,0,.28));
+            transition: .35s;
+        }
+        .vionis-tour-card .content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+            z-index: 2;
+        }
+        .vionis-tour-card h3 {
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            font-family: "Montserrat", sans-serif;
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1.05;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0;
+            -webkit-text-stroke: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,.45), 0 6px 16px rgba(0,0,0,.35);
+            transition: all .35s ease;
+        }
+        .vionis-tour-card:hover img {
+            transform: scale(1.08);
+        }
+        .vionis-tour-card:hover .overlay {
+            background: linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,.32), rgba(0,0,0,.42));
+        }
+        .vionis-tour-card:hover h3 {
+            transform: scale(1.03);
+        }
+        
+        /* Tablet Mini Override (2 columns / 50% width) */
+        @media(max-width: 768px) and (min-width: 550px) {
+            .vionis-tour-wrapper .vionis-tour-cell {
+                width: 50% !important;
+                max-width: 50% !important;
+                flex-basis: 50% !important;
+            }
+        }
+
+        /* Responsive typography & heights */
+        @media(max-width: 768px) {
+            .vionis-tour-card { height: 360px; }
+            .vionis-tour-card h3 { font-size: 34px; }
+        }
+        @media(max-width: 549px) {
+            .vionis-tour-card { height: 280px; }
+            .vionis-tour-card h3 { font-size: 24px; line-height: 1.15; }
+        }
+
+        /* CSS kiểm soát nút bấm prev/next của Slider */
+        
+        /* 1. Hiển thị nút bấm ở trạng thái disabled (mờ đi chứ không ẩn hẳn) */
+        .vionis-tour-wrapper .flickity-button:disabled {
+            opacity: 0.3 !important;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        /* 2. Ẩn nút bấm hoàn toàn nếu số lượng item nhỏ hơn hoặc bằng số cột hiển thị trên thiết bị */
+        
+        /* Trên Desktop (>= 1025px) - Hiện 3 cột: Ẩn nếu <= 3 items */
+        @media (min-width: 1025px) {
+            .vionis-tour-wrapper.vionis-items-1 .flickity-button,
+            .vionis-tour-wrapper.vionis-items-2 .flickity-button,
+            .vionis-tour-wrapper.vionis-items-3 .flickity-button {
+                display: none !important;
+            }
+        }
+        
+        /* Trên Tablet (769px - 1024px) - Hiện 3 cột: Ẩn nếu <= 3 items */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .vionis-tour-wrapper.vionis-items-1 .flickity-button,
+            .vionis-tour-wrapper.vionis-items-2 .flickity-button,
+            .vionis-tour-wrapper.vionis-items-3 .flickity-button {
+                display: none !important;
+            }
+        }
+        
+        /* Trên Tablet Mini (550px - 768px) - Hiện 2 cột: Ẩn nếu <= 2 items */
+        @media (max-width: 768px) and (min-width: 550px) {
+            .vionis-tour-wrapper.vionis-items-1 .flickity-button,
+            .vionis-tour-wrapper.vionis-items-2 .flickity-button {
+                display: none !important;
+            }
+        }
+        
+        /* Trên Mobile (< 550px) - Hiện 1 cột: Ẩn nếu <= 1 item */
+        @media (max-width: 549px) {
+            .vionis-tour-wrapper.vionis-items-1 .flickity-button {
+                display: none !important;
+            }
+        }
+    </style>
+    
+    <div class="<?php echo esc_attr( $wrapper_classes ); ?>" <?php echo $flickity_attr; ?>>
+        <?php foreach ( $categories as $category ) : 
+            $thumbnail_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
+            $image_url = wc_placeholder_img_src();
+            if ( $thumbnail_id ) {
+                $image = wp_get_attachment_image_src( $thumbnail_id, 'full' );
+                if ( $image ) {
+                    $image_url = $image[0];
+                }
+            }
+            $cat_link = get_term_link( $category );
+            ?>
+            <div class="col large-4 medium-4 small-12 vionis-tour-cell">
+                <div class="col-inner">
+                    <a class="vionis-tour-card" href="<?php echo esc_url( $cat_link ); ?>">
+                        <img src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $category->name ); ?>">
+                        <div class="overlay"></div>
+                        <div class="content">
+                            <h3><?php echo esc_html( $category->name ); ?></h3>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+// Tích hợp shortcode vionis_tour_categories vào Flatsome UX Builder
+add_action( 'ux_builder_setup', 'vionis_ux_builder_tour_categories' );
+function vionis_ux_builder_tour_categories() {
+    $thumbnail = function_exists( 'flatsome_ux_builder_thumbnail' ) ? flatsome_ux_builder_thumbnail( 'gallery' ) : '';
+
+    add_ux_builder_shortcode( 'vionis_tour_categories', array(
+        'name'      => __( 'Vionis Danh Mục Tour' ),
+        'category'  => __( 'Content' ),
+        'thumbnail' => $thumbnail,
+        'options' => array(
+            'type' => array(
+                'type'    => 'select',
+                'heading' => 'Kiểu hiển thị',
+                'default' => 'slider',
+                'options' => array(
+                    'slider' => 'Carousel (Slider)',
+                    'row'    => 'Grid (Lưới)'
+                )
+            ),
+            'ids' => array(
+                'type' => 'select',
+                'heading' => 'Chọn danh mục',
+                'config' => array(
+                    'multiple' => true,
+                    'termSelect' => array(
+                        'post_type' => 'product',
+                        'taxonomies' => array('product_cat'),
+                    )
+                )
+            )
+        )
+    ) );
+}
+
+// Thêm CDN Font chữ Montserrat
+add_action( 'wp_enqueue_scripts', 'vionis_enqueue_google_fonts' );
+function vionis_enqueue_google_fonts() {
+    wp_enqueue_style( 'google-font-montserrat', 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap', array(), null );
+}
