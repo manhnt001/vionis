@@ -567,17 +567,31 @@ function booktour() {
   global $product; ?>
 
 
-    <div class="tour-info related-item ">
-      <div class="title primary-color">
-        <?php the_title(); ?>
-      </div>
-      <?php if ( $product && $product->get_price() !== '' ) : ?>
-      <p class="price">Starting From:&nbsp; <?php echo $product->get_price_html(); ?></p>
-      <?php endif; ?>
-      <p>Location:&nbsp; <?php the_field( 'place' ); ?></p>
-      <a style="margin-top: 20px;" href="#regtour" target="_self" class="button primary custom-btn" style="border-radius:99px;">
-      <span>View Tour</span>
-    </a>
+    <div class="tour-info related-item">
+        <div class="title primary-color">
+            <?php the_title(); ?>
+        </div>
+
+        <?php if ($product && $product->get_price() !== '') : ?>
+            <p class="price">Starting From:&nbsp; <?php echo $product->get_price_html(); ?></p>
+        <?php endif; ?>
+
+        <p>Location:&nbsp; <?php the_field('place'); ?></p>
+
+        <a href="#regtour"
+        target="_self"
+        class="button primary custom-btn"
+        style="margin-top:20px;border-radius:99px;">
+            <span>View Tour</span>
+        </a>
+
+        <a href="tel:0835219687"
+        class="button alert btn-custom"
+        style="margin-top:10px;border-radius:99px;">
+            <i class="icon-phone"></i>
+            <span>Hotline: 0835 219 687</span>
+        </a>
+
     </div>
 
     <?php  $tour_title   =   $product->post->post_title; ?>
@@ -1157,141 +1171,147 @@ function search_form_side() {
       }
       ?>
 
-    <div class="row g-4">
+<div class="row g-4">
 
+  <div class="col large-3 medium-6 small-12">
+    <?php
+    $taxonomies = get_terms(array(
+        'taxonomy' => 'product_cat',
+        'hide_empty' => true
+    ));
+    if (!empty($taxonomies)) : ?>
 
-      <div class="col large-3 medium-6 small-12">
-        <?php
-        $taxonomies = get_terms(array(
-            'taxonomy' => 'product_cat',
-            'hide_empty' => true
-        ));
-        if (!empty($taxonomies)) : ?>
+      <label>Tour Type</label>
+      <select name="loai-tour" class="form-control">
+          <option value=""><?php _e('Select Tour Type', 'hazo') ?></option>
+          <?php foreach ($taxonomies as $subcategory) {
+                  if ($_GET['loai-tour'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) {
+                      $select = 'selected';
+                  } else {
+                      $select = '';
+                  } ?>
+                  <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>>
+                      <?php echo $subcategory->name ?>
+                  </option>
+              <?php } ?>
+      </select>
+    <?php endif; ?>
+  </div>
 
-          <label>Loại tour</label>
-          <select name="loai-tour" id="" class="form-control">
-              <option value=""><?php _e('Chọn loại tour', 'hazo') ?></option>
-              <?php foreach ($taxonomies as $subcategory) {
-                      if ($_GET['loai-tour'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) {
-                          $select = 'selected';
-                      } else {
-                          $select = '';
-                      } ?>
-                      <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>><?php echo $subcategory->name ?></option>
-                  <?php } ?>
-          </select>
-        <?php endif; ?>
+  <div class="col large-3 medium-6 small-12">
+    <?php
+    $taxonomies = get_terms(array(
+        'taxonomy' => 'tour_time',
+        'hide_empty' => true
+    ));
+    if (!empty($taxonomies)) : ?>
 
-      </div>
-    
+      <label>Duration</label>
+      <select name="so-luong-ngay" class="form-control">
+          <option value=""><?php _e('Select Duration', 'hazo') ?></option>
+          <?php foreach ($taxonomies as $subcategory) {
+                  if ($_GET['so-luong-ngay'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) {
+                      $select = 'selected';
+                  } else {
+                      $select = '';
+                  } ?>
+                  <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>>
+                      <?php echo $subcategory->name ?>
+                  </option>
+              <?php } ?>
+      </select>
+    <?php endif; ?>
+  </div>
 
-      <div class="col large-3 medium-6 small-12">
-        <?php
-        $taxonomies = get_terms(array(
-            'taxonomy' => 'tour_time',
-            'hide_empty' => true
-        ));
-        if (!empty($taxonomies)) : ?>
+  <!-- Price Filter -->
+  <div class="col large-3 medium-6 small-12">
+    <label>Price Range</label>
 
-          <label>Số lượng ngày</label>
-          <select name="so-luong-ngay" id="" class="form-control">
-              <option value=""><?php _e('Chọn số lượng ngày', 'hazo') ?></option>
-              <?php foreach ($taxonomies as $subcategory) {
-                      if ($_GET['so-luong-ngay'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) {
-                          $select = 'selected';
-                      } else {
-                          $select = '';
-                      } ?>
-                      <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>><?php echo $subcategory->name ?></option>
-                  <?php } ?>
-          </select>
-        <?php endif; ?>
+    <?php
+    $products = get_posts(array(
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'orderby' => 'meta_value_num',
+        'meta_key'=> '_price',
+        'posts_per_page' => -1,
+    ));
 
-      </div>
-      <!-- item --->
+    $highest = $products[array_key_first($products)];
+    $lowest = $products[array_key_last($products)];
 
+    $max_price = get_post_meta($highest->ID, '_price', true);
+    $min_price = get_post_meta($lowest->ID, '_price', true);
+    ?>
 
-     <!-- Giá filter -->
-       <!-- Giá filter -->
-      <div class="col large-3 medium-6 small-12">
-        <label>Lọc theo giá</label>
-        <?php
-
-        $products = get_posts(array(
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'orderby' => 'meta_value_num',
-            'meta_key'=> '_price',
-            'posts_per_page' => -1,
-        ));
-
-        $highest = $products[array_key_first($products)];
-        $lowest = $products[array_key_last($products)];
-
-        $max_price = get_post_meta( $highest->ID, '_price', true );
-        $min_price = get_post_meta( $lowest->ID, '_price', true );
-        ?>
-
-       
-
-      <div class="price-content">
-        <div>
-          <label>Từ</label>
-          <p id="min-value"><?php echo number_format((float)($_GET['min-price'] ?: $min_price) , 0, ',', '.'); ?> vnd</p>
-        </div>
-
-        <div>
-          <label>Đến</label>
-          <p id="max-value"><?php echo number_format((float)($_GET['max-price'] ?: $max_price) , 0, ',', '.'); ?> vnd</p>
-        </div>
+    <div class="price-content">
+      <div>
+        <label>From</label>
+        <p id="min-value">
+          <?php echo number_format((float)($_GET['min-price'] ?: $min_price), 0, ',', '.'); ?> VND
+        </p>
       </div>
 
-        <div class="range-slider">
-          <input type="range" name="min-price" class="min-price" value="0" min="0" max="<?php echo $_GET['max-price'] ?? $max_price; ?>" step="100000">
-          <input type="range" name="max-price" class="max-price" value="<?php echo $_GET['max-price'] ?? $max_price; ?>" min="<?php echo $_GET['min-price'] ?? $min_price; ?>" max="<?php echo $_GET['max-price'] ?? $max_price; ?>" step="0">
-        </div>
-
-     
+      <div>
+        <label>To</label>
+        <p id="max-value">
+          <?php echo number_format((float)($_GET['max-price'] ?: $max_price), 0, ',', '.'); ?> VND
+        </p>
       </div>
-      <!-- item --->
-
-      <div class="col large-3 medium-6 small-12">
-        <?php
-        $taxonomies = get_terms(array(
-            'taxonomy' => 'product_end',
-            'hide_empty' => true
-        ));
-        if (!empty($taxonomies)) : ?>
-
-          <label>Nơi đến</label>
-          <select name="noi-den" id="" class="form-control">
-              <option value=""><?php _e('Chọn nơi đến', 'hazo') ?></option>
-              <?php foreach ($taxonomies as $subcategory) {
-                      if ($_GET['noi-den'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) { 
-                          $select = 'selected';
-                      } else {
-                          $select = '';
-                      } ?>
-                      <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>><?php echo $subcategory->name ?></option>
-                  <?php } ?>
-          </select>
-        <?php endif; ?>
-
-      </div>
-      <!-- item --->
-
-      
-
-      <div class="col large-3 medium-6 small-12">
-        <button type="submit"
-                class="bg-primary btn d-flex align-items-center text-white">
-                
-                <?php _e('Tìm kiếm ', 'hazo') ?><i style="margin-left: 10px;" class="icon-search"></i>
-            </button>
-      </div>
-      <!-- item --->
-  
     </div>
+
+    <div class="range-slider">
+      <input type="range"
+             name="min-price"
+             class="min-price"
+             value="0"
+             min="0"
+             max="<?php echo $_GET['max-price'] ?? $max_price; ?>"
+             step="100000">
+
+      <input type="range"
+             name="max-price"
+             class="max-price"
+             value="<?php echo $_GET['max-price'] ?? $max_price; ?>"
+             min="<?php echo $_GET['min-price'] ?? $min_price; ?>"
+             max="<?php echo $_GET['max-price'] ?? $max_price; ?>"
+             step="0">
+    </div>
+  </div>
+
+  <div class="col large-3 medium-6 small-12">
+    <?php
+    $taxonomies = get_terms(array(
+        'taxonomy' => 'product_end',
+        'hide_empty' => true
+    ));
+    if (!empty($taxonomies)) : ?>
+
+      <label>Destination</label>
+      <select name="noi-den" class="form-control">
+          <option value=""><?php _e('Select Destination', 'hazo') ?></option>
+          <?php foreach ($taxonomies as $subcategory) {
+                  if ($_GET['noi-den'] == $subcategory->slug || get_queried_object_id() == $subcategory->term_id) {
+                      $select = 'selected';
+                  } else {
+                      $select = '';
+                  } ?>
+                  <option value="<?php echo $subcategory->slug ?>" <?php echo $select ?>>
+                      <?php echo $subcategory->name ?>
+                  </option>
+              <?php } ?>
+      </select>
+    <?php endif; ?>
+  </div>
+
+  <div class="col large-3 medium-6 small-12">
+    <button type="submit"
+            class="bg-primary btn d-flex align-items-center text-white">
+        <?php _e('Search', 'hazo') ?>
+        <i style="margin-left:10px;" class="icon-search"></i>
+    </button>
+  </div>
+
+</div>
   </form>
 
 
@@ -1820,3 +1840,108 @@ add_action( 'wp_enqueue_scripts', 'vionis_enqueue_google_fonts' );
 function vionis_enqueue_google_fonts() {
     wp_enqueue_style( 'google-font-montserrat', 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap', array(), null );
 }
+
+/* ẩn yacht-tour với danh mục chung sản phẩm */
+// add_action('pre_get_posts', function ($query) {
+
+//     if (is_admin() || !$query->is_main_query()) {
+//         return;
+//     }
+
+//     if (!is_product_category()) {
+//         return;
+//     }
+
+//     $term = get_queried_object();
+
+//     // Nếu đang xem Yacht Tour thì không lọc
+//     if ($term->slug === 'yacht-tour') {
+//         return;
+//     }
+
+//     $tax_query = $query->get('tax_query');
+
+//     if (!is_array($tax_query)) {
+//         $tax_query = [];
+//     }
+
+//     $tax_query[] = [
+//         'taxonomy' => 'product_cat',
+//         'field'    => 'slug',
+//         'terms'    => ['yacht-tour'],
+//         'operator' => 'NOT IN',
+//     ];
+
+//     $query->set('tax_query', $tax_query);
+
+// });
+
+
+/* ẩn yacht-tour với danh mục north-vietnam và danh mục con */
+// add_action('pre_get_posts', function ($query) {
+
+//     if (is_admin() || !$query->is_main_query()) {
+//         return;
+//     }
+
+//     if (!is_product_category()) {
+//         return;
+//     }
+
+//     $term = get_queried_object();
+
+//     // Kiểm tra nếu đang ở North Vietnam hoặc bất kỳ danh mục con nào của nó
+//     $is_north_vietnam = (
+//         $term->slug === 'north-vietnam'
+//         || term_is_ancestor_of(
+//             get_term_by('slug', 'north-vietnam', 'product_cat'),
+//             $term,
+//             'product_cat'
+//         )
+//     );
+
+//     if ($is_north_vietnam) {
+
+//         $tax_query = (array) $query->get('tax_query');
+
+//         $tax_query[] = [
+//             'taxonomy' => 'product_cat',
+//             'field'    => 'slug',
+//             'terms'    => ['yacht-tour'],
+//             'operator' => 'NOT IN',
+//         ];
+
+//         $query->set('tax_query', $tax_query);
+//     }
+
+// });
+
+/* ẩn yacht-tour với danh mục north-vietnam */
+add_action('pre_get_posts', function ($query) {
+
+    if (is_admin() || !$query->is_main_query()) {
+        return;
+    }
+
+    if (!is_tax('product_cat')) {
+        return;
+    }
+
+    $term = get_queried_object();
+
+    // Chỉ áp dụng cho North Vietnam
+    if ($term->slug === 'north-vietnam') {
+
+        $tax_query = (array) $query->get('tax_query');
+
+        $tax_query[] = array(
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => array('yacht-tour'),
+            'operator' => 'NOT IN',
+        );
+
+        $query->set('tax_query', $tax_query);
+    }
+
+});

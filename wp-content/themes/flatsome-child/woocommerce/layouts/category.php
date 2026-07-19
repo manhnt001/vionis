@@ -15,7 +15,7 @@
 
 
 			<div class="form-title">
-					TÌM KIẾM TOUR
+					SEARCH TOUR
 				</div>
 			<div class="archive-form">
 				<?php echo do_shortcode('[search_form_side]') ?>
