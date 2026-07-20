@@ -39,8 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	const collapsedHeight = 280;
-	if (desc.scrollHeight <= collapsedHeight) {
+	const threshold = 40; // Ngưỡng hiển thị (chỉ hiện nút nếu dài hơn collapsedHeight + 40px)
+	if (desc.scrollHeight <= collapsedHeight + threshold) {
 		toggle.style.display = 'none';
+		desc.classList.add('expanded'); // Mở rộng hoàn toàn và ẩn gradient mờ ở dưới
 		return;
 	}
 

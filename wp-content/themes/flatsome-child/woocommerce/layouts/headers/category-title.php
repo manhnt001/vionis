@@ -16,9 +16,12 @@
         $bg_image_url = get_site_url().'/wp-content/uploads/2023/06/Tour-du-lich-chau-au-mua-he-2023-top-ten-travel-1.jpeg'; // Default fallback image
 
         if ( $category && isset( $category->term_id ) ) {
-            $thumbnail_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
-            if ( $thumbnail_id ) {
-                $image = wp_get_attachment_image_url( $thumbnail_id, 'hazo-banner' );
+            $banner_id = get_term_meta( $category->term_id, 'category_banner_id', true );
+            if ( ! $banner_id ) {
+                $banner_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
+            }
+            if ( $banner_id ) {
+                $image = wp_get_attachment_image_url( $banner_id, 'hazo-banner' );
                 if ( $image ) {
                     $bg_image_url = $image;
                 }

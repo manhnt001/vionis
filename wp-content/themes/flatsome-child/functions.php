@@ -295,9 +295,12 @@ function header_page() { ?>
       elseif( is_category() || is_archive() || is_tax() ) {
           $category = get_queried_object();
           if ( $category && isset( $category->term_id ) ) {
-              $thumbnail_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
-              if ( $thumbnail_id ) {
-                  $img_url = wp_get_attachment_image_url( $thumbnail_id, 'hazo-banner' );
+              $banner_id = get_term_meta( $category->term_id, 'category_banner_id', true );
+              if ( ! $banner_id ) {
+                  $banner_id = get_term_meta( $category->term_id, 'thumbnail_id', true );
+              }
+              if ( $banner_id ) {
+                  $img_url = wp_get_attachment_image_url( $banner_id, 'hazo-banner' );
                   if ( $img_url ) {
                       $image = $img_url;
                   }
@@ -1529,7 +1532,7 @@ add_action('wp_footer', function(){
 		<!-- Brevo Conversations {literal} -->
 		<script>
 			(function(d, w, c) {
-				w.BrevoConversationsID = '6a19766a2dc861909e0440e9';
+				w.BrevoConversationsID = '6a5d82f794a1960693071d12';
 				w[c] = w[c] || function() {
 					(w[c].q = w[c].q || []).push(arguments);
 				};
@@ -1945,3 +1948,205 @@ add_action('pre_get_posts', function ($query) {
     }
 
 });
+
+/**
+ * Get category banner image URL based on product ID
+ */
+function get_product_category_banner_url( $product_id ) {
+    $terms = wp_get_post_terms( $product_id, 'product_cat' );
+    $term = null;
+    
+    if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+        // 1. Check if any assigned term is yacht-tour or under yacht-tour
+        foreach ( $terms as $t ) {
+            $current = $t;
+            while ( $current && ! is_wp_error( $current ) ) {
+                if ( $current->slug === 'yacht-tour' ) {
+                    $term = $t;
+                    break 2; // Found yacht-tour associated term, break both loops
+                }
+                if ( $current->parent ) {
+                    $current = get_term( $current->parent, 'product_cat' );
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        // 2. If no yacht-tour category, fall back to Rank Math primary category
+        if ( ! $term ) {
+            $primary_cat_id = get_post_meta( $product_id, 'rank_math_primary_product_cat', true );
+            if ( $primary_cat_id ) {
+                $term = get_term( $primary_cat_id, 'product_cat' );
+            }
+        }
+        
+        // 3. Fall back to the first category if still not set
+        if ( ! $term || is_wp_error( $term ) ) {
+            $term = $terms[0];
+        }
+    }
+    
+    // 4. Traverse up terms to find a category_banner_id, with fallback to thumbnail_id
+    if ( $term && ! is_wp_error( $term ) ) {
+        $current_term = $term;
+        while ( $current_term && ! is_wp_error( $current_term ) ) {
+            // First check the custom banner field
+            $banner_id = get_term_meta( $current_term->term_id, 'category_banner_id', true );
+            if ( $banner_id ) {
+                $img_url = wp_get_attachment_image_url( $banner_id, 'full' );
+                if ( $img_url ) {
+                    return $img_url;
+                }
+            }
+            // If no custom banner, check standard WooCommerce category thumbnail
+            $thumbnail_id = get_term_meta( $current_term->term_id, 'thumbnail_id', true );
+            if ( $thumbnail_id ) {
+                $img_url = wp_get_attachment_image_url( $thumbnail_id, 'full' );
+                if ( $img_url ) {
+                    return $img_url;
+                }
+            }
+            if ( $current_term->parent ) {
+                $current_term = get_term( $current_term->parent, 'product_cat' );
+            } else {
+                break;
+            }
+        }
+    }
+    return '';
+}
+
+/**
+ * Dynamically set background image for .banner-categories based on category image on single product page
+ */
+add_action( 'wp_head', 'custom_product_category_banner_css', 100 );
+function custom_product_category_banner_css() {
+    if ( is_singular( 'product' ) ) {
+        $product_id = get_the_ID();
+        $banner_url = get_product_category_banner_url( $product_id );
+        
+        // Output debug comment to HTML source to verify image retrieval
+        echo "\n<!-- VIONIS DEBUG: Product ID = " . esc_html($product_id) . " | Banner URL = " . esc_url($banner_url) . " -->\n";
+        
+        if ( $banner_url ) {
+            ?>
+            <style>
+                .banner-categories .section-bg {
+                    background-image: url('<?php echo esc_url( $banner_url ); ?>') !important;
+                    background-size: cover !important;
+                    background-position: 50% 50% !important;
+                }
+                .banner-categories .section-bg img {
+                    display: none !important;
+                }
+            </style>
+            <?php
+        }
+    }
+}
+
+/**
+ * Add custom banner image field to Product Category (product_cat)
+ */
+// Enqueue WordPress Media Uploader scripts for taxonomy page
+add_action( 'admin_enqueue_scripts', 'custom_category_banner_media_scripts' );
+function custom_category_banner_media_scripts( $hook ) {
+    if ( 'edit-tags.php' === $hook && isset( $_GET['taxonomy'] ) && 'product_cat' === $_GET['taxonomy'] ) {
+        wp_enqueue_media();
+    }
+}
+
+// Add field to "Add New Category" screen
+add_action( 'product_cat_add_form_fields', 'add_category_banner_field', 10, 2 );
+function add_category_banner_field( $taxonomy ) {
+    ?>
+    <div class="form-field term-group">
+        <label for="category_banner_id"><?php _e( 'Banner Image', 'woocommerce' ); ?></label>
+        <input type="hidden" id="category_banner_id" name="category_banner_id" class="custom-img-id" value="" />
+        <div id="category_banner_wrapper" style="margin-bottom: 10px;"></div>
+        <p>
+            <button type="button" class="upload_banner_button button"><?php _e( 'Upload/Add image', 'woocommerce' ); ?></button>
+            <button type="button" class="remove_banner_button button" style="display:none;"><?php _e( 'Remove image', 'woocommerce' ); ?></button>
+        </p>
+        <?php custom_category_banner_js(); ?>
+    </div>
+    <?php
+}
+
+// Add field to "Edit Category" screen
+add_action( 'product_cat_edit_form_fields', 'edit_category_banner_field', 10, 2 );
+function edit_category_banner_field( $term, $taxonomy ) {
+    $banner_id = get_term_meta( $term->term_id, 'category_banner_id', true );
+    $image_url = '';
+    if ( $banner_id ) {
+        $image_url = wp_get_attachment_image_url( $banner_id, 'thumbnail' );
+    }
+    ?>
+    <tr class="form-field term-group-wrap">
+        <th scope="row"><label for="category_banner_id"><?php _e( 'Banner Image', 'woocommerce' ); ?></label></th>
+        <td>
+            <input type="hidden" id="category_banner_id" name="category_banner_id" value="<?php echo esc_attr( $banner_id ); ?>" />
+            <div id="category_banner_wrapper" style="margin-bottom: 10px;">
+                <?php if ( $image_url ) : ?>
+                    <img src="<?php echo esc_url( $image_url ); ?>" style="max-width: 150px; height: auto;" />
+                <?php endif; ?>
+            </div>
+            <p>
+                <button type="button" class="upload_banner_button button"><?php _e( 'Upload/Add image', 'woocommerce' ); ?></button>
+                <button type="button" class="remove_banner_button button" style="<?php echo $banner_id ? '' : 'display:none;'; ?>"><?php _e( 'Remove image', 'woocommerce' ); ?></button>
+            </p>
+            <?php custom_category_banner_js(); ?>
+        </td>
+    </tr>
+    <?php
+}
+
+// JavaScript for Media Uploader
+function custom_category_banner_js() {
+    ?>
+    <script type="text/javascript">
+        jQuery(document).ready(function($){
+            var file_frame;
+            $(document).on('click', '.upload_banner_button', function(e) {
+                e.preventDefault();
+                if ( file_frame ) {
+                    file_frame.open();
+                    return;
+                }
+                file_frame = wp.media.frames.file_frame = wp.media({
+                    title: '<?php _e( "Select or Upload Category Banner", "woocommerce" ); ?>',
+                    button: {
+                        text: '<?php _e( "Use this image", "woocommerce" ); ?>'
+                    },
+                    multiple: false
+                });
+                file_frame.on('select', function() {
+                    var attachment = file_frame.state().get('selection').first().toJSON();
+                    $('#category_banner_id').val(attachment.id);
+                    var img_url = attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url;
+                    $('#category_banner_wrapper').html('<img src="' + img_url + '" style="max-width:150px;height:auto;" />');
+                    $('.remove_banner_button').show();
+                });
+                file_frame.open();
+            });
+
+            $(document).on('click', '.remove_banner_button', function(e) {
+                e.preventDefault();
+                $('#category_banner_id').val('');
+                $('#category_banner_wrapper').empty();
+                $(this).hide();
+            });
+        });
+    </script>
+    <?php
+}
+
+// Save fields
+add_action( 'created_product_cat', 'save_category_banner_field', 10, 2 );
+add_action( 'edited_product_cat', 'save_category_banner_field', 10, 2 );
+function save_category_banner_field( $term_id, $tt_id ) {
+    if ( isset( $_POST['category_banner_id'] ) ) {
+        update_term_meta( $term_id, 'category_banner_id', sanitize_text_field( $_POST['category_banner_id'] ) );
+    }
+}

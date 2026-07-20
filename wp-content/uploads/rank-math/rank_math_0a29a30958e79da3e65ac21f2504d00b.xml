@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="//localhost/vionis/main-sitemap.xsl"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<sitemap>
+		<loc>http://localhost/vionis/post-sitemap.xml</loc>
+		<lastmod>2026-07-09T10:19:46+00:00</lastmod>
+	</sitemap>
+	<sitemap>
+		<loc>http://localhost/vionis/page-sitemap.xml</loc>
+		<lastmod>2026-07-14T07:37:39+00:00</lastmod>
+	</sitemap>
+	<sitemap>
+		<loc>http://localhost/vionis/blocks-sitemap.xml</loc>
+		<lastmod>2026-07-20T08:51:14+00:00</lastmod>
+	</sitemap>
+	<sitemap>
+		<loc>http://localhost/vionis/product-sitemap.xml</loc>
+		<lastmod>2026-07-10T15:20:40+00:00</lastmod>
+	</sitemap>
+	<sitemap>
+		<loc>http://localhost/vionis/category-sitemap.xml</loc>
+		<lastmod>2026-07-09T10:19:46+00:00</lastmod>
+	</sitemap>
+</sitemapindex>
