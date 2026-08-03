@@ -1250,14 +1250,14 @@ function search_form_side() {
       <div>
         <label>From</label>
         <p id="min-value">
-          <?php echo number_format((float)($_GET['min-price'] ?: $min_price), 0, ',', '.'); ?> VND
+          $ <?php echo number_format((float)($_GET['min-price'] ?: $min_price), 0, ',', '.'); ?>
         </p>
       </div>
 
       <div>
         <label>To</label>
         <p id="max-value">
-          <?php echo number_format((float)($_GET['max-price'] ?: $max_price), 0, ',', '.'); ?> VND
+          $ <?php echo number_format((float)($_GET['max-price'] ?: $max_price), 0, ',', '.'); ?>
         </p>
       </div>
     </div>
@@ -1405,8 +1405,8 @@ input[type=range]::-webkit-slider-runnable-track {
         minPrice = tempValue;
       }
 
-      minValue.innerHTML = formatNumberWithDotSeparator(minPrice) + " vnd";
-      maxValue.innerHTML = formatNumberWithDotSeparator(maxPrice) + " vnd";
+      minValue.innerHTML = "$ " + formatNumberWithDotSeparator(minPrice);
+      maxValue.innerHTML = "$ " + formatNumberWithDotSeparator(maxPrice);
     }
 
     const inputElements = document.querySelectorAll(".range-slider input");
@@ -1954,66 +1954,54 @@ add_action('pre_get_posts', function ($query) {
  */
 function get_product_category_banner_url( $product_id ) {
     $terms = wp_get_post_terms( $product_id, 'product_cat' );
-    $term = null;
-    
-    if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
-        // 1. Check if any assigned term is yacht-tour or under yacht-tour
-        foreach ( $terms as $t ) {
-            $current = $t;
-            while ( $current && ! is_wp_error( $current ) ) {
-                if ( $current->slug === 'yacht-tour' ) {
-                    $term = $t;
-                    break 2; // Found yacht-tour associated term, break both loops
-                }
-                if ( $current->parent ) {
-                    $current = get_term( $current->parent, 'product_cat' );
-                } else {
-                    break;
-                }
-            }
-        }
-        
-        // 2. If no yacht-tour category, fall back to Rank Math primary category
-        if ( ! $term ) {
-            $primary_cat_id = get_post_meta( $product_id, 'rank_math_primary_product_cat', true );
-            if ( $primary_cat_id ) {
-                $term = get_term( $primary_cat_id, 'product_cat' );
-            }
-        }
-        
-        // 3. Fall back to the first category if still not set
-        if ( ! $term || is_wp_error( $term ) ) {
-            $term = $terms[0];
-        }
+    if ( empty( $terms ) || is_wp_error( $terms ) ) {
+        return '';
     }
     
-    // 4. Traverse up terms to find a category_banner_id, with fallback to thumbnail_id
-    if ( $term && ! is_wp_error( $term ) ) {
-        $current_term = $term;
-        while ( $current_term && ! is_wp_error( $current_term ) ) {
-            // First check the custom banner field
-            $banner_id = get_term_meta( $current_term->term_id, 'category_banner_id', true );
-            if ( $banner_id ) {
-                $img_url = wp_get_attachment_image_url( $banner_id, 'full' );
-                if ( $img_url ) {
-                    return $img_url;
-                }
-            }
-            // If no custom banner, check standard WooCommerce category thumbnail
-            $thumbnail_id = get_term_meta( $current_term->term_id, 'thumbnail_id', true );
-            if ( $thumbnail_id ) {
-                $img_url = wp_get_attachment_image_url( $thumbnail_id, 'full' );
-                if ( $img_url ) {
-                    return $img_url;
-                }
-            }
-            if ( $current_term->parent ) {
-                $current_term = get_term( $current_term->parent, 'product_cat' );
+    $all_terms_with_depth = array();
+    
+    // Gather all terms and their ancestors, calculating their exact depth
+    foreach ( $terms as $term ) {
+        $current = $term;
+        $lineage = array();
+        
+        while ( $current && ! is_wp_error( $current ) ) {
+            $lineage[] = $current;
+            if ( $current->parent > 0 ) {
+                $current = get_term( $current->parent, 'product_cat' );
             } else {
                 break;
             }
         }
+        
+        $max_depth = count($lineage) - 1;
+        foreach ( $lineage as $index => $anc_term ) {
+            $anc_depth = $max_depth - $index;
+            if ( ! isset( $all_terms_with_depth[ $anc_term->term_id ] ) || $all_terms_with_depth[ $anc_term->term_id ]['depth'] < $anc_depth ) {
+                $all_terms_with_depth[ $anc_term->term_id ] = array(
+                    'term'  => $anc_term,
+                    'depth' => $anc_depth
+                );
+            }
+        }
     }
+    
+    // Sort all found terms by depth descending (deepest child first)
+    uasort( $all_terms_with_depth, function($a, $b) {
+        return $b['depth'] - $a['depth'];
+    });
+    
+    // Check from deepest to top level, return the first one with a category_banner_id
+    foreach ( $all_terms_with_depth as $item ) {
+        $banner_id = get_term_meta( $item['term']->term_id, 'category_banner_id', true );
+        if ( $banner_id ) {
+            $img_url = wp_get_attachment_image_url( $banner_id, 'full' );
+            if ( $img_url ) {
+                return $img_url;
+            }
+        }
+    }
+    
     return '';
 }
 
@@ -2032,12 +2020,14 @@ function custom_product_category_banner_css() {
         if ( $banner_url ) {
             ?>
             <style>
-                .banner-categories .section-bg {
+                .banner-categories .section-bg,
+                .product-detail .section-bg {
                     background-image: url('<?php echo esc_url( $banner_url ); ?>') !important;
                     background-size: cover !important;
                     background-position: 50% 50% !important;
                 }
-                .banner-categories .section-bg img {
+                .banner-categories .section-bg img,
+                .product-detail .section-bg img {
                     display: none !important;
                 }
             </style>
@@ -2052,13 +2042,14 @@ function custom_product_category_banner_css() {
 // Enqueue WordPress Media Uploader scripts for taxonomy page
 add_action( 'admin_enqueue_scripts', 'custom_category_banner_media_scripts' );
 function custom_category_banner_media_scripts( $hook ) {
-    if ( 'edit-tags.php' === $hook && isset( $_GET['taxonomy'] ) && 'product_cat' === $_GET['taxonomy'] ) {
+    if ( 'edit-tags.php' === $hook && isset( $_GET['taxonomy'] ) && ( 'product_cat' === $_GET['taxonomy'] || 'category' === $_GET['taxonomy'] ) ) {
         wp_enqueue_media();
     }
 }
 
 // Add field to "Add New Category" screen
 add_action( 'product_cat_add_form_fields', 'add_category_banner_field', 10, 2 );
+add_action( 'category_add_form_fields', 'add_category_banner_field', 10, 2 );
 function add_category_banner_field( $taxonomy ) {
     ?>
     <div class="form-field term-group">
@@ -2076,6 +2067,7 @@ function add_category_banner_field( $taxonomy ) {
 
 // Add field to "Edit Category" screen
 add_action( 'product_cat_edit_form_fields', 'edit_category_banner_field', 10, 2 );
+add_action( 'category_edit_form_fields', 'edit_category_banner_field', 10, 2 );
 function edit_category_banner_field( $term, $taxonomy ) {
     $banner_id = get_term_meta( $term->term_id, 'category_banner_id', true );
     $image_url = '';
@@ -2145,8 +2137,10 @@ function custom_category_banner_js() {
 // Save fields
 add_action( 'created_product_cat', 'save_category_banner_field', 10, 2 );
 add_action( 'edited_product_cat', 'save_category_banner_field', 10, 2 );
+add_action( 'created_category', 'save_category_banner_field', 10, 2 );
+add_action( 'edited_category', 'save_category_banner_field', 10, 2 );
 function save_category_banner_field( $term_id, $tt_id ) {
     if ( isset( $_POST['category_banner_id'] ) ) {
         update_term_meta( $term_id, 'category_banner_id', sanitize_text_field( $_POST['category_banner_id'] ) );
     }
-}
+}
